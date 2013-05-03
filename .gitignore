@@ -1,0 +1,22 @@
+# leiningen
+/target
+/lib
+/classes
+/checkouts
+pom.xml
+pom.xml.asc
+*.jar
+*.class
+.lein-deps-sum
+.lein-failures
+.lein-plugins
+.lein-repl-history
+
+# eclipse
+/bin
+.classpath
+.project
+.settings
+
+# Mac
+.DS_Store
