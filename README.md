@@ -1,6 +1,6 @@
 # simplecs
 
-Complecs is a Component-Entity-System game engine used to write games in a modular fashion.
+Simplecs is a Component-Entity-System game engine used to write games in a modular fashion.
 It was inspired by a
 [blog post by Chris Granger](http://www.chris-granger.com/2012/12/11/anatomy-of-a-knockout/)
 (also see [Gambit](https://github.com/ibdknox/gambit)). To learn more about Component-Entity-System
