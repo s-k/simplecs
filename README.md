@@ -7,7 +7,7 @@ It was inspired by a
 engines (also called entity systems or component systems), see
 [this series of posts](http://t-machine.org/index.php/2007/09/03/entity-systems-are-the-future-of-mmog-development-part-1/).
 
-The library is in a very early stage and is subject to change.
+The library is at a very early stage and is subject to change.
 
 
 ## Usage
@@ -17,6 +17,8 @@ Add the following dependency in your `project.clj`:
 ``` clojure
 [simplecs "0.1.0-SNAPSHOT"]
 ```
+
+See this [example](src/simplecs/examples/ping_pong.clj).
 
 ## License
 
