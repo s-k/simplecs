@@ -1,4 +1,4 @@
-# simplecs
+# Simplecs
 
 Simplecs is a Component-Entity-System game engine used to write games in a modular fashion.
 It was inspired by a
