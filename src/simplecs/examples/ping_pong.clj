@@ -12,36 +12,31 @@
 (defcomponentsystem mover :velocity
   []
   [ces entity velocity-component]
-  (update-component ces
-                    entity
-                    :position
-                    #(update-in % [:pos] + (:v velocity-component))))
+  (update-entity ces
+                 entity
+                 [:position :pos]
+                 + (:v velocity-component)))
 
 (defcomponentsystem collider :ball
   []
   [ces entity _]
-  (let [pos (:pos (get-component ces entity :position))
-        v (:v (get-component ces entity :velocity))]
+  (letc ces entity
+        [pos [:position :pos]
+         v [:velocity :v]]
     (if (or (and (< pos 1)
                  (< v 0))
             (and (>= pos (- (:width ces) 1))
                  (> v 0)))
-      (update-component ces
-                        entity
-                        :velocity
-                        #(update-in % [:v] -))
+      (update-entity ces entity [:velocity :v] -)
       ces)))
 
 (defcomponentsystem position-validator :ball
   []
   [ces entity _]
-  (update-component ces
-                    entity
-                    :position
-                    (fn [component]
-                      (update-in component
-                                 [:pos]
-                                 #(max 0 (min (- (:width ces) 1) %))))))
+  (update-entity ces
+                 entity
+                 [:position :pos]
+                 #(max 0 (min (- (:width ces) 1) %))))
 
 (defsystem output-clearer
   [bg-symbol]
@@ -58,7 +53,8 @@
 (defcomponentsystem ping-pong-renderer :ball
   []
   [ces entity _]
-  (let [pos (:pos (get-component ces entity :position))]
+  (letc ces entity
+        [pos [:position :pos]]
     (cond (= pos 0) (assoc ces :output [\P \I \N \G \!])
           (= pos (- (:width ces) 1)) (assoc ces :output [\P \O \N \G \!])
           :default ces)))

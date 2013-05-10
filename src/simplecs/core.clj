@@ -33,6 +33,13 @@
   [ces entity-id component-keyword]
   (get-in ces [::components component-keyword entity-id]))
 
+(defn get-in-component
+  [ces entity-id [component-keyword & ks]]
+  (if ks
+    (get-in (get-component ces entity-id component-keyword)
+            ks)
+    (get-component ces entity-id component-keyword)))
+
 (defn update-component
   "Returns an updated CES where the component with 'component-keyword'
    of the entity with 'entity-id' is updated using function 'f'."
@@ -40,6 +47,18 @@
   {:pre [(has-component? ces entity-id component-keyword)]
    :post [(:name (get-in % [::components component-keyword entity-id]))]}
   (apply update-in ces [::components component-keyword entity-id] f r))
+
+(defn update-in-component
+  [ces entity-id [component-keyword & ks] f & more]
+  (if ks
+    (update-component ces entity-id component-keyword #(apply update-in % ks f more))
+    (apply update-component ces entity-id component-keyword f more)))
+
+(defn update-entity
+  [ces entity-id keyword-or-list f & more]
+  (if (sequential? keyword-or-list)
+    (apply update-in-component ces entity-id keyword-or-list f more)
+    (apply update-component ces entity-id keyword-or-list f more)))
 
 (defn add-component
   "Returns an updated CES where for the entity with 'entity-id' the
@@ -174,3 +193,12 @@
                                     ~@body))
                  ces#
                  (map vector entities# components#))))))
+
+(defmacro letc [ces-expr entity-expr bindings & body]
+  (let [ces (gensym "ces")
+        entity (gensym "entity")]
+    `(let [~ces ~ces-expr
+           ~entity ~entity-expr]
+       (let ~(vec (apply concat (for [[var ks] (partition-all 2 bindings)]
+                                  [var `(get-in-component ~ces ~entity ~ks)])))
+         ~@body))))
