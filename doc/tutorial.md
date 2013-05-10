@@ -8,7 +8,7 @@ At first, we require the `simplecs.core` namespace.
 
 ``` clojure
 (ns simplecs.examples.ping-pong
-  (:require [simplecs.core :refer :all]))
+  (:require [simplecs.core :as sc]))
 ````
 
 Simplecs is based on the assumption that each game entity is just a collection of components
@@ -16,12 +16,12 @@ which contain all of the entity data. In our case, the only entity is a ping pon
 one-dimensional table. Therefore, the only attributes are its position and its velocity.
 
 ```clojure
-(defcomponent ball [])
+(sc/defcomponent ball [])
 
-(defcomponent position [pos]
+(sc/defcomponent position [pos]
   :pos pos)
 
-(defcomponent velocity [v]
+(sc/defcomponent velocity [v]
   :v v)
 ```
 
@@ -43,13 +43,13 @@ Let's define our first system. Since the ping pong ball has a velocity, it has t
 task is handled by a system called `mover`:
 
 ``` clojure
-(defcomponentsystem mover :velocity
+(sc/defcomponentsystem mover :velocity
   []
   [ces entity velocity-component]
-  (update-entity ces
-                 entity
-                 [:position :pos]
-                 + (:v velocity-component)))
+  (sc/update-entity ces
+                    entity
+                    [:position :pos]
+                    + (:v velocity-component)))
 ```
 
 Here is a walkthrough of the code: With `(defcomponentsysten mover :velocity ...)`, we define
@@ -62,17 +62,17 @@ to `ces`, the entity ID to `entity` and the velocity component is bound to
 `entity` and adds the velocity.
 
 ```clojure
-(defcomponentsystem collider :ball
+(sc/defcomponentsystem collider :ball
   []
   [ces entity _]
-  (letc ces entity
-        [pos [:position :pos]
-         v [:velocity :v]]
+  (sc/letc ces entity
+           [pos [:position :pos]
+            v [:velocity :v]]
     (if (or (and (< pos 1)
                  (< v 0))
             (and (>= pos (- (:width ces) 1))
                  (> v 0)))
-      (update-entity ces entity [:velocity :v] -)
+      (sc/update-entity ces entity [:velocity :v] -)
       ces)))
 ```
 
@@ -89,13 +89,13 @@ our ping pong table.
 The `position-validator` system ensures that the ball stays on the table:
 
 ``` clojure
-(defcomponentsystem position-validator :ball
+(sc/defcomponentsystem position-validator :ball
   []
   [ces entity _]
-  (update-entity ces
-                 entity
-                 [:position :pos]
-                 #(max 0 (min (- (:width ces) 1) %))))
+  (sc/update-entity ces
+                    entity
+                    [:position :pos]
+                    #(max 0 (min (- (:width ces) 1) %))))
 ```
 
 Until now, we have only defined systems using `defcomponentsystem`. This is useful if we want
@@ -103,7 +103,7 @@ to handle all entities with a specific component. If we want to perform a task w
 independent of a specific component, we use `defsystem`:
 
 ``` clojure
-(defsystem output-clearer
+(sc/defsystem output-clearer
   [bg-symbol]
   [ces]
   (assoc ces :output (vec (repeat (:width ces) bg-symbol))))
@@ -118,23 +118,24 @@ prints a string to the console. We store this string as a vector of symbols unde
 `(:width ces)` containing only the symbol given to it when the system was initialized.
 
 ``` clojure
-(defcomponentsystem ball-renderer :ball
+(sc/defcomponentsystem ball-renderer :ball
   [ball-symbol]
   [ces entity _]
   (assoc-in ces
-            [:output (:pos (get-component ces entity :position))]
+            [:output (:pos (sc/get-component ces entity :position))]
             ball-symbol))
 ```
 
 The system `ball-renderer` simply replaces the symbol in the output vector at the position of
-the ball with the symbol given when the system is instantiated.
+the ball with the symbol given when the system is instantiated. `get-component` is used to
+obtain the `position` component of the entity.
 
 ``` clojure
-(defcomponentsystem ping-pong-renderer :ball
+(sc/defcomponentsystem ping-pong-renderer :ball
   []
   [ces entity _]
-  (letc ces entity
-        [pos [:position :pos]]
+  (sc/letc ces entity
+           [pos [:position :pos]]
     (cond (= pos 0) (assoc ces :output [\P \I \N \G \!])
           (= pos (- (:width ces) 1)) (assoc ces :output [\P \O \N \G \!])
           :default ces)))
@@ -146,7 +147,7 @@ the output vector with one that says 'PING!' and if the ball is at the right-mos
 the output gets changed to 'PONG!'.
 
 ``` clojure
-(defsystem output-converter
+(sc/defsystem output-converter
   []
   [ces]
   (update-in ces [:output] #(apply str %)))
@@ -158,17 +159,17 @@ Now it's time to put everything together:
 
 ``` clojure
 (def ces
-  (atom (make-ces {:entities [[(ball)
-                               (position -1)
-                               (velocity 1)]]
-                   :systems [(mover)
-                             (collider)
-                             (position-validator)
-                             (output-clearer \.)
-                             (ball-renderer \o)
-                             (ping-pong-renderer)
-                             (output-converter)]
-                   :width 5})))
+  (atom (sc/make-ces {:entities [[(ball)
+                                  (position -1)
+                                  (velocity 1)]]
+                      :systems [(mover)
+                                (collider)
+                                (position-validator)
+                                (output-clearer \.)
+                                (ball-renderer \o)
+                                (ping-pong-renderer)
+                                (output-converter)]
+                      :width 5})))
 ```
 
 We define `ces` as an atom containing our CES, which is created by the function `make-ces`.
@@ -181,7 +182,7 @@ be executed for every step.
 
 ``` clojure
 (defn update []
-  (swap! ces advance-ces)
+  (swap! ces sc/advance-ces)
   (println (:output @ces)))
 ```
 
