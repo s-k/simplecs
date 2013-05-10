@@ -18,7 +18,7 @@ Add the following dependency in your `project.clj`:
 [simplecs "0.1.0-SNAPSHOT"]
 ```
 
-See this [example](src/simplecs/examples/ping_pong.clj).
+There is a [tutorial](doc/tutorial.md).
 
 ## License
 
