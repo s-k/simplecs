@@ -1,7 +1,7 @@
 # Ping Pong Tutorial for Simplecs
 
 We want to simulate a very simple ping pong game.
-The complete source can be found [here](src/simplecs/examples/ping_pong.clj).
+The complete source can be found [here](../src/simplecs/examples/ping_pong.clj).
 It's best to run it before reading on.
 
 At first, we require the `simplecs.core` namespace.
@@ -193,5 +193,4 @@ Now, we have everything we need. Let's try it out:
 
 ``` clojure
 (dotimes [i 20] (update))
-
 ```
