@@ -3,23 +3,15 @@
             [simplecs.core :refer :all]))
 
 (defcomponent test-component []
-  :test 1)
+  {:test 1})
 
 (def ces
   (make-ces {:entities [[(test-component)]]
              :systems []}))
 
 (deftest update-component-test
-  (let [entity (last-added-entity-id ces)]
-    (is (= (update-in-component ces
-                                entity
-                                [:test-component :test]
-                                + 2)
-           (update-in-component ces
-                                entity
-                                [:test-component]
-                                #(update-in % [:test] + 2))
-           (update-entity ces
+  (let [entity (last-added-entity ces)]
+    (is (= (update-entity ces
                           entity
                           [:test-component :test]
                           + 2)
@@ -30,16 +22,12 @@
            (update-entity ces
                           entity
                           :test-component
-                          #(update-in % [:test] + 2))
-           (update-component ces
-                             entity
-                             :test-component
-                             #(update-in % [:test] + 2))))))
+                          #(update-in % [:test] + 2))))))
 
 (deftest letc-test
-  (let [entity (last-added-entity-id ces)]
+  (let [entity (last-added-entity ces)]
     (letc ces entity [component [:test-component]
                       test-entry [:test-component :test]]
           (is (= (:test component)
                  test-entry
-                 (get-in-component ces entity [:test-component :test]))))))
+                 (get-in-entity ces entity [:test-component :test]))))))
