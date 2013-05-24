@@ -1,5 +1,5 @@
 (ns simplecs.tags
-  (:require [simplecs.core :as sc]))
+  (:require [simplecs.core :as sc :refer (defcomponent defcomponentsystem)]))
 
 (defn tag
   "Instead of defining a component '(defcomponent foo [])' and
@@ -10,10 +10,20 @@
   {:pre [(keyword? tag)]}
   {:name tag})
 
-(sc/defcomponent tag-to-entity [& paths]
+(defcomponent tag-to-entity
+  "Converts a tag stored in a component into the entity containing
+   the tag. The system 'tag-to-entity-converter' has to be included
+   in the CES. '(tag-to-entity [:foo :bar])' reads the entry :bar
+   of the component 'foo'. This entry should contain a keyword
+   representing a tag. The keyword is then replaced with the
+   entity which contains this tag. The 'tag-to-entity' component
+   is removed after it was applied."
+  [& paths]
   :paths paths)
 
-(sc/defcomponentsystem tag-to-entity-converter :tag-to-entity
+(defcomponentsystem tag-to-entity-converter :tag-to-entity
+  "Applies the 'tag-to-entity' component. It is adviced that
+   this system is the first in the list of systems."
   []
   [ces entity component]
   (let [converted-ces (reduce (fn [ces path]

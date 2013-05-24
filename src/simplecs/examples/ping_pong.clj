@@ -1,13 +1,13 @@
 (ns simplecs.examples.ping-pong
   (:require [simplecs.core :as sc]))
 
-(sc/defcomponent ball [])
+(sc/defcomponent ball [] {})
 
 (sc/defcomponent position [pos]
-  :pos pos)
+  {:pos pos})
 
 (sc/defcomponent velocity [v]
-  :v v)
+  {:v v})
 
 (sc/defcomponentsystem mover :velocity
   []

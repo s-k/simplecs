@@ -1,86 +1,90 @@
 (ns simplecs.core
-  (:require [clojure.set :refer (rename-keys)]))
-
-(defn- dissoc-in
-  "Dissociates an entry from a nested associative structure returning a new
-  nested structure. keys is a sequence of keys. Any empty maps that result
-  will not be present in the new structure."
-  [m [k & ks :as keys]]
-  (if ks
-    (if-let [nextmap (get m k)]
-      (let [newmap (dissoc-in nextmap ks)]
-        (if (seq newmap)
-          (assoc m k newmap)
-          (dissoc m k)))
-      m)
-    (dissoc m k)))
+  (:require [clojure.set :refer (rename-keys)]
+            [clojure.core.incubator :refer (dissoc-in)]))
 
 (defn entities-with-component
-  "Returns a seq with all entity-ids of 'ces' which
+  "Returns a seq with all entities of 'ces' which
    have the component with the 'component-keyword'."
   [ces component-keyword]
   (keys (get-in ces [::components component-keyword])))
 
 (defn has-component?
-  "Returns true if the entity with 'entity-id'
+  "Returns true if the given entity
    has the component with 'component-keyword'."
-  [ces entity-id component-keyword]
-  (get-in ces [::entities entity-id component-keyword]))
+  [ces entity component-keyword]
+  (get-in ces [::entities entity component-keyword]))
 
 (defn get-component
   "Returns the component with 'component-keyword'
-   of the entity with 'entity-id'."
-  [ces entity-id component-keyword]
-  (get-in ces [::components component-keyword entity-id]))
+   of the given entity."
+  [ces entity component-keyword]
+  (get-in ces [::components component-keyword entity]))
 
-(defn get-in-component
-  [ces entity-id [component-keyword & ks]]
-  (if ks
-    (get-in (get-component ces entity-id component-keyword)
-            ks)
-    (get-component ces entity-id component-keyword)))
+(defn get-in-entity
+  "Similar to 'get-in'. (get-in-entity ces entity :component)
+   is equivalent to (get-component ces entity :component).
+   However, if a path is given,
+   (get-in-entity ces entity [:component :a :b]) is equivalent
+   to (get-in (get-component ces entity :component) [:a :b])"
+  [ces entity path]
+  (if (sequential? path)
+    (let [[component-keyword & ks] path]
+      (if ks
+        (get-in (get-component ces entity component-keyword)
+                ks)
+        (get-component ces entity component-keyword)))
+    (get-component ces entity path)))
 
-(defn update-component
+(defn- update-component
   "Returns an updated CES where the component with 'component-keyword'
-   of the entity with 'entity-id' is updated using function 'f'."
-  [ces entity-id component-keyword f & r]
-  {:pre [(has-component? ces entity-id component-keyword)]
-   :post [(:name (get-in % [::components component-keyword entity-id]))]}
-  (apply update-in ces [::components component-keyword entity-id] f r))
+   of the given entity is updated using function 'f'."
+  [ces entity component-keyword f & r]
+  {:pre [(has-component? ces entity component-keyword)]
+   :post [(:name (get-in % [::components component-keyword entity]))]}
+  (apply update-in ces [::components component-keyword entity] f r))
 
-(defn update-in-component
-  [ces entity-id [component-keyword & ks] f & more]
+(defn- update-in-component
+  "(update-in-component ces entity [:component :a :b] f x y) is short for
+   (update-component ces entity :component #(update-in % [:a :b] f x y))"
+  [ces entity [component-keyword & ks] f & more]
   (if ks
-    (update-component ces entity-id component-keyword #(apply update-in % ks f more))
-    (apply update-component ces entity-id component-keyword f more)))
+    (update-component ces entity component-keyword #(apply update-in % ks f more))
+    (apply update-component ces entity component-keyword f more)))
 
 (defn update-entity
-  [ces entity-id keyword-or-list f & more]
+  "(update-entity ces entity component-keyword f & args) updates
+   the component with the given keyword by applying the function
+   'f' to it and any additional arguments.
+   (update-entity ces entity [component-keyword & ks] f & args)
+   updates the value under the key-path 'ks' in the component
+   with the given keword by applying the function 'f' to it and
+   any additional arguments."
+  [ces entity keyword-or-list f & args]
   (if (sequential? keyword-or-list)
-    (apply update-in-component ces entity-id keyword-or-list f more)
-    (apply update-component ces entity-id keyword-or-list f more)))
+    (apply update-in-component ces entity keyword-or-list f args)
+    (apply update-component ces entity keyword-or-list f args)))
 
 (defn add-component
-  "Returns an updated CES where for the entity with 'entity-id' the
+  "Returns an updated CES where for the given entity the
    new 'component' is added."
-  [ces entity-id component]
+  [ces entity component]
   (-> ces
-      (assoc-in [::components (:name component) entity-id] component)
-      (update-in [::entities entity-id] #(conj % (:name component)))))
+      (assoc-in [::components (:name component) entity] component)
+      (update-in [::entities entity] #(conj % (:name component)))))
 
 (defn remove-component
   "Returns an updated CES where the component with
-   'component-keyword' is removed from the entity with 'entity-id'."
-  [ces entity-id component-keyword]
+   'component-keyword' is removed from the given entity."
+  [ces entity component-keyword]
   (-> ces
-      (dissoc-in [::components component-keyword entity-id])
-      (update-in [::entities entity-id] #(disj % component-keyword))))
+      (dissoc-in [::components component-keyword entity])
+      (update-in [::entities entity] #(disj % component-keyword))))
 
 (defn component-keywords-for-entity
   "Returns a set of the keywords for all
-   components of the entity with 'entity-id'."
-  [ces entity-id]
-  (get-in ces [::entities entity-id]))
+   components of the given entity."
+  [ces entity]
+  (get-in ces [::entities entity]))
 
 (defn add-entity
   "Returns an updated ces with a new entity
@@ -97,20 +101,20 @@
                    components))))))
 
 (defn remove-all-components-of-entity
-  "Removes all components of the entitiy with the given ID from the CES."
-  [ces entity-id]
-  (let [component-keywords (get-in ces [::entities entity-id])]
-    (reduce #(remove-component %1 entity-id %2) ces component-keywords)))
+  "Removes all components of the given entitiy from the CES."
+  [ces entity]
+  (let [component-keywords (get-in ces [::entities entity])]
+    (reduce #(remove-component %1 entity %2) ces component-keywords)))
 
 (defn remove-entity
-  "Removes the entity with the given ID from the CES."
-  [ces entity-id]
+  "Removes the given entity from the CES."
+  [ces entity]
   (-> ces
-      (remove-all-components-of-entity entity-id)
-      (dissoc-in [::entities entity-id])))
+      (remove-all-components-of-entity entity)
+      (dissoc-in [::entities entity])))
 
-(defn last-added-entity-id
-  "Returns the id of the entity which was last added to the CES."
+(defn last-added-entity
+  "Returns the entity which was last added to the CES."
   [ces]
   (::last-id ces))
 
@@ -146,16 +150,23 @@
 
 (defmacro defcomponent
   "Defines a function with the given name which returns a component.
-   Takes the arguments [name doc-string? [params*] keys-and-vals*].
-   The returned component contains the given keys and values."
+   It can be used exactly like 'defn'. Each of the function bodies
+   must return an associative container."
   [name & r]
   (let [[doc-str-seq r] (if (string? (first r))
-                  				[[(first r)] (next r)]
-                      		[[] r])
-        [params & entries] r]
-    `(defn ~name ~@doc-str-seq ~params
-       ~(into {:name (keyword name)}
-              (map vec (partition 2 entries))))))
+                          [[(first r)] (next r)]
+                          [[] r])
+        [attr-map-seq r] (if (map? (first r))
+                           [[(first r)] (next r)]
+                           [[] r])
+        r (if (vector? (first r))
+            (list r)
+            r)
+        [attr-map-seq2 bodies] (if (map? (last r))
+                                 [[(last r)] (butlast r)]
+                                 [[] r])
+        bodies (map (fn [body] `(~@(butlast body) (assoc ~(last body) :name ~(keyword name)))) bodies)]
+    `(defn ~name ~@doc-str-seq ~@attr-map-seq ~@bodies ~@attr-map-seq2)))
 
 (defmacro defsystem
   "Defines a function with the given name which returns a system.
@@ -200,5 +211,5 @@
     `(let [~ces ~ces-expr
            ~entity ~entity-expr]
        (let ~(vec (apply concat (for [[var ks] (partition-all 2 bindings)]
-                                  [var `(get-in-component ~ces ~entity ~ks)])))
+                                  [var `(get-in-entity ~ces ~entity ~ks)])))
          ~@body))))

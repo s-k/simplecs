@@ -16,13 +16,13 @@ which contain all of the entity data. In our case, the only entity is a ping pon
 one-dimensional table. Therefore, the only attributes are its position and its velocity.
 
 ```clojure
-(sc/defcomponent ball [])
+(sc/defcomponent ball [] {})
 
 (sc/defcomponent position [pos]
-  :pos pos)
+  {:pos pos})
 
 (sc/defcomponent velocity [v]
-  :v v)
+  {:v v})
 ```
 
 In the code above, we have defined three component types. The first just marks an entity as a
