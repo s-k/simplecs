@@ -19,7 +19,7 @@
    entity which contains this tag. The 'tag-to-entity' component
    is removed after it was applied."
   [& paths]
-  :paths paths)
+  {:paths paths})
 
 (defcomponentsystem tag-to-entity-converter :tag-to-entity
   "Applies the 'tag-to-entity' component. It is adviced that
