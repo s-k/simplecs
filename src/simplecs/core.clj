@@ -206,6 +206,15 @@
                  (map vector entities# components#))))))
 
 (defmacro letc [ces-expr entity-expr bindings & body]
+  "(letc ces entity [x :component1
+                     y [:component2]
+                     z [:component3 :a :b]]
+     ...)
+   is short for
+   (let [x (get-in-entity ces entity :component1)
+         y (get-in-entity ces entity [:component2])
+         z (get-in-entity ces entity [:component3 :a :b])]
+     ...)."
   (let [ces (gensym "ces")
         entity (gensym "entity")]
     `(let [~ces ~ces-expr
