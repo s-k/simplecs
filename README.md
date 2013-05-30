@@ -15,7 +15,7 @@ The library is at a very early stage and is subject to change.
 Add the following dependency in your `project.clj`:
 
 ``` clojure
-[simplecs "0.1.0-SNAPSHOT"]
+[simplecs "0.1.0"]
 ```
 
 There is a [tutorial](doc/tutorial.md).

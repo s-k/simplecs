@@ -1,4 +1,4 @@
-(defproject simplecs "0.1.0-SNAPSHOT"
+(defproject simplecs "0.1.0"
   :description "Simplecs is a Component-Entity-System game engine used to write games in a modular fashion."
   :url "https://github.com/s-k/simplecs"
   :licenses [{:name "Apache License 2.0"
